@@ -11,7 +11,7 @@ date = Date.today-2
 file_date = date.strftime("%Y%m")
 csv_file_name = "reviews_#{CONFIG["package_name"]}_#{file_date}.csv"
 
-system "BOTO_PATH=./secrets/.boto gsutil/gsutil cp -r gs://#{CONFIG["app_repo"]}/reviews/#{csv_file_name} ."
+system "BOTO_PATH=~/.boto ~/Development/tools/gsutil/gsutil cp -r gs://#{CONFIG["app_repo"]}/reviews/#{csv_file_name} ."
 
 
 class Slack
@@ -75,9 +75,9 @@ class Review
 
   def build_message
     date = if edited
-             "subdate: #{original_subitted_at.strftime("%d.%m.%Y at %I:%M%p")}, edited at: #{submitted_at.strftime("%d.%m.%Y at %I:%M%p")}"
+             "subdate: #{original_subitted_at.strftime("%b %d, %Y at %I:%M%p")}, edited at: #{submitted_at.strftime("%b %d, %Y at %I:%M%p")}"
            else
-             "subdate: #{submitted_at.strftime("%d.%m.%Y at %I:%M%p")}"
+             "subdate: #{submitted_at.strftime("%b %d, %Y at %I:%M%p")}"
            end
 
     stars = rate.times.map{"★"}.join + (5 - rate).times.map{"☆"}.join
