@@ -9,7 +9,7 @@ CONFIG = YAML.load_file('./secrets/secrets.yml')
 date = Date.today-2
 
 file_date = date.strftime("%Y%m")
-csv_file_name = "#{CONFIG["package_name"]}_#{file_date}.csv"
+csv_file_name = "reviews_#{CONFIG["package_name"]}_#{file_date}.csv"
 
 system "BOTO_PATH=./secrets/.boto gsutil/gsutil cp -r gs://#{CONFIG["app_repo"]}/reviews/#{csv_file_name} ."
 
@@ -32,7 +32,7 @@ class Review
 
   def self.send_reviews_from_date(date)
     message = collection.select do |r|
-      r.submitted_at > date && (r.title || r.text)
+      r.submitted_at > date && (r.title || r.text || r.rate)
     end.sort_by do |r|
       r.submitted_at
     end.map do |r|
@@ -65,7 +65,10 @@ class Review
 
   def notify_to_slack
     if text || title
-      message = "*Rating: #{rate}* | version: #{version} | subdate: #{submitted_at}\n #{[title, text].join(" ")}\n <#{url}|Ответить в Google play>"
+      message = "*Rating: #{rate}* | version: #{version} | subdate: #{submitted_at}\n #{[title, text].join(" ")}\n <#{url}|Reply on Google play>"
+      Slack.notify(message)
+    else 
+      message = "*Rating: #{rate}* | version: #{version} | subdate: #{submitted_at}\n "
       Slack.notify(message)
     end
   end
@@ -79,12 +82,19 @@ class Review
 
     stars = rate.times.map{"★"}.join + (5 - rate).times.map{"☆"}.join
 
-    [
-      "\n\n#{stars}",
-      "Version: #{version} | #{date}",
-      "#{[title, text].join(" ")}",
-      "<#{url}|Ответить в Google play>"
-    ].join("\n")
+    if text || title
+      [
+        "\n\n#{stars}",
+        "Version: #{version} | #{date}",
+        "#{[title, text].join(" ")}",
+        "<#{url}|Reply on Google play>"
+      ].join("\n")
+    else
+      [
+        "\n\n#{stars}",
+        "Version: #{version} | #{date}"
+      ].join("\n")
+    end
   end
 end
 
